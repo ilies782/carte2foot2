@@ -1,6 +1,22 @@
 import random
 from discord.ext import commands
+import discord
 from utils.database import load_cards
+
+# Couleurs par rareté
+RARITY_COLORS = {
+    "Common": 0x95a5a6,    # Gris
+    "Rare": 0x3498db,      # Bleu
+    "Epic": 0x9b59b6,      # Violet
+    "Legendary": 0xf1c40f  # Or
+}
+
+RARITY_EMOJIS = {
+    "Common": "⚪",
+    "Rare": "🔵",
+    "Epic": "🟣",
+    "Legendary": "🟡"
+}
 
 class Packs(commands.Cog):
     def __init__(self, bot):
@@ -8,33 +24,28 @@ class Packs(commands.Cog):
 
     @commands.command(name="pack")
     async def open_pack(self, ctx):
+        """Ouvre un pack et donne une carte aléatoire parmi toutes les cartes."""
         data = load_cards()
         cards = data["cards"]
 
-        chances = {
-            "Legendary": 1,
-            "Epic": 5,
-            "Rare": 20,
-            "Common": 74
-        }
+        card = random.choice(cards)
 
-        rarity = random.choices(
-            list(chances.keys()),
-            weights=list(chances.values()),
-            k=1
-        )[0]
-
-        possible_cards = [c for c in cards if c["rarity"] == rarity]
-
-        card = random.choice(possible_cards)
-
-        await ctx.send(
-            f"🎉 **Pack ouvert !**\n"
-            f"⭐ Rareté obtenue : **{rarity}**\n"
-            f"👤 Joueur : **{card['player']}**\n"
-            f"🏟️ Club : **{card['club']}**\n"
-            f"🃏 ID : {card['id']}"
+        # Embed Discord
+        embed = discord.Embed(
+            title="🎉 Pack Ouvert !",
+            description=f"Tu as obtenu une carte !",
+            color=RARITY_COLORS.get(card["rarity"], 0xffffff)
         )
 
+        embed.add_field(name="👤 Joueur", value=card["player"], inline=False)
+        embed.add_field(name="🏟️ Club", value=card["club"], inline=False)
+        embed.add_field(name=f"{RARITY_EMOJIS.get(card['rarity'],'⭐')} Rareté", value=card["rarity"], inline=False)
+
+        # Tu peux ajouter une image si tu veux (exemple) :
+        # embed.set_thumbnail(url="https://link-to-card-image.png")
+
+        await ctx.send(embed=embed)
+
+# Pour discord.py 2.x
 async def setup(bot):
     await bot.add_cog(Packs(bot))
